@@ -171,7 +171,7 @@ class Tetris {
                 if(block.data[i * 5 + j] == 0) {
                     continue;
                 }
-                if(this.field[(y + i) * width + (x + j)] != 0) {
+                if(!updateField && this.field[(y + i) * width + (x + j)] != 0) {
                     this.drawField = this.field.slice();
                     return false;
                 }
@@ -191,16 +191,17 @@ class Tetris {
 
         for(let i = height - 2; i >= 1; --i) {
             let n = 0;
+            let isFilled = true;
             for(let j = 1; j < width - 1; ++j) {
-                if(field[width * i + j] != 0 ) {
-                    ++n;
+                if(field[width * i + j] == 0 ) {
+                    isFilled = false;
                 }
-                if(n == width - 2) {
-                    for(let k = 1; k < width - 1; ++k) {
-                        field[width * i + k] = 0;
-                    }
-                    eraseLines.push(i);
+            }
+            if(isFilled) {
+                for(let k = 1; k < width - 1; ++k) {
+                    field[width * i + k] = 0;
                 }
+                eraseLines.push(i);
             }
         }
         if(eraseLines.length != 0) 
@@ -240,7 +241,7 @@ class Tetris {
         let drawField = this.drawField;
         let length = this.drawField.length;
         cvs.ctx.fillStyle = "#000";
-        cvs.ctx.fillRect(offsetX - 1 , offsetY - 1, cellSize * width, cellSize * height);
+        cvs.ctx.fillRect(offsetX - 1 , offsetY - 1, cellSize * width + 1, cellSize * height + 1);
         for(let i = 0; i < length; ++i) {
             let x = i % width;
             let y = Math.floor(i / width);
@@ -249,8 +250,8 @@ class Tetris {
             cvs.ctx.fillRect(
                 offsetX + x * cellSize,
                 offsetY + y * cellSize,
-                cellSize - 1 ,
-                cellSize - 1 );
+                cellSize - 2 ,
+                cellSize - 2 );
             cvs.ctx.fillStyle = "#0ff";
             //cvs.ctx.strokeText("(" + i + ")", this.offsetX + x * this.cellSize, this.offsetY + y * this.cellSize + 10);
         }
@@ -266,7 +267,7 @@ class Game {
     private canvas: Canvas;
     private tetris: Tetris;
 
-    private nexts: Tetris[];
+    private next: Tetris;
 
     private blockFactory: BlockFactory;
 
@@ -276,13 +277,7 @@ class Game {
     public init() {
         this.canvas = new Canvas("main", 640, 640);
         this.tetris = new Tetris(10, 20, 10, 10, 30);
-        this.nexts = new Array(
-            new Tetris(5, 5, 320, 10, 25, false),
-            new Tetris(5, 5, 320, 135, 25, false),
-            new Tetris(5, 5, 320, 260, 25, false),
-            new Tetris(5, 5, 320, 375, 25, false),
-            new Tetris(5, 5, 320, 500, 25, false)
-        );
+        this.next = new Tetris(5, 30, 310, 10, 15, false);
         this.blockFactory = new BlockFactory(5);
         this.blockFactory.genList();
         this.keys = new Array(91);
@@ -293,8 +288,8 @@ class Game {
             this.pressedKeys[i] = false;
         }
 
-        for(let i = 0; i < this.nexts.length; ++i) {
-            this.nexts[i].putBlock(0, 0, this.blockFactory.nextList[i], true);
+        for(let i = 0; i < this.blockFactory.nextList.length; ++i) {
+            this.next.putBlock(0, i * 5 + 1, this.blockFactory.nextList[i], true);
         }
 
         document.onkeydown = (e) => {
@@ -379,10 +374,10 @@ class Game {
         this.tetris.eraseLine();
         setTimeout( () => {
             this.tetris.draw(this.canvas);
-            for(let i = 0; i < this.nexts.length; ++i) {
-                this.nexts[i].init(false);
-                this.nexts[i].putBlock(0, 0, this.blockFactory.nextList[i], true);
-                this.nexts[i].draw(this.canvas);
+            this.next.init(false);
+            for(let i = 0; i < this.blockFactory.nextList.length; ++i) {
+                this.next.putBlock(0, i * 5 + 1, this.blockFactory.nextList[i], true);
+                this.next.draw(this.canvas);
             }
         }, 0);
         ++this.frame;

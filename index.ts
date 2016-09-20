@@ -332,14 +332,14 @@ class Game {
                 this.fallBlock = null;
                 this.blockX = 2;
                 this.blockY = -1;
-                if(!this.tetris.putBlock(this.blockX, this.blockY, this.fallBlock)) {
-                    this.init();
-                }                
             }
         }
         // 落下中ブロックがなかったらNEXTから取り出し
         if(this.fallBlock == null) {
-            this.fallBlock = this.blockFactory.next();            
+            this.fallBlock = this.blockFactory.next();     
+            if(!this.tetris.putBlock(this.blockX, this.blockY, this.fallBlock)) {
+                this.init();
+            }        
             this.next.init(false);
             // NEXTの更新
             for(let i = 0; i < this.blockFactory.nextList.length; ++i) {
@@ -398,7 +398,7 @@ class Game {
 var oldTime = 0;
 var lastFpsUpdTime = 0;
 var fps = 0;
-var count = 0;
+var count = 1;
 
 window.onload = ()=> {
     game = new Game();

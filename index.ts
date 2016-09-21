@@ -124,6 +124,29 @@ class BlockFactory {
         }
     }
 }
+
+class DrawNext {
+    static draw(cvs: Canvas, nextList: Block[], offsetX: number, offsetY: number, cellSize: number) {
+        let length = nextList.length;
+        let list = nextList;
+        let dataLen = list[0].data.length;
+        
+        for(let n = 0; n < length; ++n) {
+            for(let i = 0; i < dataLen; ++i) {
+                let x = i % 5;
+                let y = Math.floor(i / 5);
+                cvs.ctx.fillStyle = block_colors[list[n].data[i]];
+                cvs.ctx.fillRect (
+                    x * cellSize + offsetX,
+                    (y * cellSize + 10) * n + offsetY,
+                    cellSize - 1,
+                    cellSize - 1
+                );
+            }
+        }
+    }
+}
+
 //Canvasのヘルパクラス
 class Canvas {
     public ctx: CanvasRenderingContext2D;
@@ -139,19 +162,18 @@ class Tetris {
     private field : Array<number>;
     private drawField: Array<number>;
 
-    constructor(public width: number, public height: number, public offsetX: number = 0, public offsetY:number = 0,public cellSize: number = 3, setWall = true) {
-        this.init(setWall);
+    constructor(public width: number, public height: number, public setWall = true) {
+        this.init();
     }
-    public init(setWall = true) {
+    public init() {
         this.field = new Array(this.width * this.height);
         let height = this.height;
         let width = this.width;
         let field = this.field;
-
         for(let i = 0; i < height; ++i) {
             for(let j = 0; j < width; ++j) {
                 //壁を配置する
-                if(setWall && (j == 0 || j == width - 1 || i == height - 1)) {
+                if(this.setWall && (j == 0 || j == width - 1 || i == height - 1)) {
                     field[width * i + j] = 8;
                 }
                 else {
@@ -238,10 +260,7 @@ class Tetris {
         return lines.length;
     }
     //フィールドの描画
-    public draw(cvs: Canvas){
-        let offsetX = this.offsetX;
-        let offsetY = this.offsetY;
-        let cellSize = this.cellSize;
+    public draw(cvs: Canvas, offsetX: number = 0, offsetY:number = 0, cellSize: number = 3){
         let width = this.width;
         let height = this.height;
         let drawField = this.drawField;
@@ -280,8 +299,8 @@ class Game {
 
     public init() {
         this.canvas = new Canvas("main", 640, 640);
-        this.tetris = new Tetris(10, 20, 10, 10, 30);
-        this.next = new Tetris(5, 30, 310, 10, 15, false);
+        this.tetris = new Tetris(10, 20);
+        this.next = new Tetris(5, 30, false);
         this.blockFactory = new BlockFactory(5);
         this.blockFactory.genList();
         this.keys = new Array(91);
@@ -340,7 +359,7 @@ class Game {
             if(!this.tetris.putBlock(this.blockX, this.blockY, this.fallBlock)) {
                 this.init();
             }        
-            this.next.init(false);
+            this.next.init();
             // NEXTの更新
             for(let i = 0; i < this.blockFactory.nextList.length; ++i) {
                 this.next.putBlock(0, i * 5 + 1, this.blockFactory.nextList[i], true);
@@ -387,8 +406,9 @@ class Game {
         // eraseLineといいつつチェックも行っている
         this.tetris.eraseLine();
         setTimeout( () => { // 描画は負荷が高いので別スレッドで行う
-            this.tetris.draw(this.canvas);
-            this.next.draw(this.canvas);
+            this.tetris.draw(this.canvas, 10, 10, 30);
+            DrawNext.draw(this.canvas, this.blockFactory.nextList, 500, 10, 15);
+            this.next.draw(this.canvas, 310, 10, 15);
         }, 0);
         ++this.frame;
     }

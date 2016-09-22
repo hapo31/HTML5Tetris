@@ -289,7 +289,8 @@ class Game {
     private fallBlock: Block = null; // 現在落下中のブロック
     private canvas: Canvas; // 描画するcanvas
     private tetris: Tetris; // テトリスのシステム
-
+    private fallIntervalFrames = 20; // 地面に固定されるまでのフレーム数
+    private groundFrames = 0; // 地面に触れてからのフレーム数
     private next: Tetris;  // NEXT表示用のテトリスフィールド
 
     private blockFactory: BlockFactory;
@@ -343,14 +344,25 @@ class Game {
     }
 
     public update() {
-        if(this.frame % 20 == 0 ) { // nフレームに一回ブロックを1マス落下させる
-            this.blockY++; // 一度ずらしてブロックを置いてみる
-            if(!this.tetris.putBlock(this.blockX, this.blockY, this.fallBlock)) {
-                //落下後にもしそのマスにおけなかったら、その一つ上の座標にブロックを設置する
-                this.tetris.putBlock(this.blockX, this.blockY - 1, this.fallBlock, true);
-                this.fallBlock = null;
-                this.blockX = 2;
-                this.blockY = -1;
+        if(this.groundFrames >= 1) {
+            this.groundFrames ++;
+            console.log(this.groundFrames);
+        }
+        // nフレームに一回ブロックを1マス落下させる
+        if(this.frame % this.fallIntervalFrames == 0 || this.groundFrames > this.fallIntervalFrames ) { 
+            if(!this.tetris.putBlock(this.blockX, this.blockY + 1, this.fallBlock)) {
+                ++this.groundFrames; // 設置するまでの遊びを加算
+                if(this.groundFrames >= this.fallIntervalFrames) {
+                    //落下後にもしそのマスにおけなかったら、その座標にブロックを設置する
+                    this.tetris.putBlock(this.blockX, this.blockY, this.fallBlock, true);
+                    this.fallBlock = null;
+                    this.blockX = 2;
+                    this.blockY = -1;
+                }
+            }
+            else {
+                this.blockY++;
+                this.groundFrames = 0;
             }
         }
         // 落下中ブロックがなかったらNEXTから取り出し
@@ -399,6 +411,10 @@ class Game {
             let y = this.blockY + 1;
             if(this.tetris.putBlock(this.blockX, y, this.fallBlock)) {
                 this.blockY = y;
+            }
+            else if(this.keys[40] == 1) {
+                this.groundFrames = this.fallIntervalFrames;
+                console.log("put");
             }
         }
         // 落下ブロックを表示

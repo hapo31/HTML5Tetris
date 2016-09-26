@@ -130,16 +130,17 @@ class DrawBlocks {
         let length = blockList.length;
         let list = blockList;
         let dataLen = list[0].data.length;
+        let flameSize = cellSize / 2;
         cvs.ctx.fillStyle = "#000000";
-        cvs.ctx.fillRect(offsetX - 1, offsetY + 9, 5 * cellSize + 1, 25 * cellSize + 1);
+        cvs.ctx.fillRect(offsetX - 1, offsetY + 9, 5 * cellSize + flameSize, 27.7 * cellSize );
         for(let n = 0; n < length; ++n) {
             for(let i = 0; i < dataLen; ++i) {
                 let x = i % 5;
                 let y = Math.floor(i / 5);
                 cvs.ctx.fillStyle = block_colors[list[n].data[i]];
                 cvs.ctx.fillRect (
-                    x * cellSize + offsetX,
-                    ((y + n * 5 ) * cellSize + 10) + offsetY,
+                    x * cellSize + offsetX + flameSize / 2,
+                    ((y + n * 5.5 ) * cellSize + 10) + offsetY + flameSize / 2,
                     cellSize - 1,
                     cellSize - 1
                 );
@@ -335,9 +336,9 @@ class Game {
     static OFFSET_Y = 10;
 
     constructor(){}
-    private frame = 1; // 現在のゲームのフレーム数
+    private frame = 0; // ブロックが落下し始めてからのフレーム数
     private blockX: number = 2; // 現在落下中のブロックのX座標
-    private blockY: number = -1; // 現在落下中のブロックのY座標
+    private blockY: number = -2; // 現在落下中のブロックのY座標
     private fallBlock: Block = null; // 現在落下中のブロック
     public canvas: Canvas; // 描画するcanvas
     private tetris: Tetris; // テトリスのシステム
@@ -360,7 +361,7 @@ class Game {
 
         this.keyMng = new KeyManager();
     }
-    
+
     public update() {
         if(this.groundFrames >= 1) {
             this.groundFrames ++;
@@ -373,7 +374,7 @@ class Game {
                     //落下後にもしそのマスにおけなかったら、その座標にブロックを設置する
                     this.tetris.putBlock(this.blockX, this.blockY, this.fallBlock, true);
                     this.fallBlock = null;
-                    this.frame = 1;
+                    this.frame = 0;
                     this.blockX = 2;
                     this.blockY = -1;
                 }

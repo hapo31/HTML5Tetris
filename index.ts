@@ -434,6 +434,13 @@ class Game {
                 console.log("put");
             }
         }
+        // UP
+        if(keys[38] == 1) {
+            while(this.tetris.putBlock(this.blockX, this.blockY + 1, this.fallBlock)){
+                this.blockY++;
+            }
+            this.groundFrames = this.fallIntervalFrames;
+        }
         // 落下ブロックを表示
         this.tetris.putBlock(this.blockX, this.blockY, this.fallBlock)
         // eraseLineといいつつチェックも行っている

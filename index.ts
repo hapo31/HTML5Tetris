@@ -125,12 +125,13 @@ class BlockFactory {
     }
 }
 
-class DrawNext {
-    static draw(cvs: Canvas, nextList: Block[], offsetX: number, offsetY: number, cellSize: number) {
-        let length = nextList.length;
-        let list = nextList;
+class DrawBlocks {
+    static draw(cvs: Canvas, blockList: Block[], offsetX: number, offsetY: number, cellSize: number) {
+        let length = blockList.length;
+        let list = blockList;
         let dataLen = list[0].data.length;
-        
+        cvs.ctx.fillStyle = "#000000";
+        cvs.ctx.fillRect(offsetX - 1, offsetY + 9, 5 * cellSize + 1, 25 * cellSize + 1);
         for(let n = 0; n < length; ++n) {
             for(let i = 0; i < dataLen; ++i) {
                 let x = i % 5;
@@ -138,7 +139,7 @@ class DrawNext {
                 cvs.ctx.fillStyle = block_colors[list[n].data[i]];
                 cvs.ctx.fillRect (
                     x * cellSize + offsetX,
-                    (y * cellSize + 10) * n + offsetY,
+                    ((y + n * 5 ) * cellSize + 10) + offsetY,
                     cellSize - 1,
                     cellSize - 1
                 );
@@ -320,18 +321,29 @@ class Tetris {
         }
     }
 }
+
+
 //ゲームの進行を管理・更新するクラス
 class Game {
+
+    static FIELD_SIZE_WIDTH = 10;
+    static FIELD_SIZE_HEIGHT = 20;
+    static CANVAS_WIDTH = 640;
+    static CANVAS_HEIGHT = 640;
+    static BLOCK_SIZE = 5;
+    static OFFSET_X = 10;
+    static OFFSET_Y = 10;
+
     constructor(){}
-    private frame = 0; // 現在のゲームのフレーム数
+    private frame = 1; // 現在のゲームのフレーム数
     private blockX: number = 2; // 現在落下中のブロックのX座標
     private blockY: number = -1; // 現在落下中のブロックのY座標
     private fallBlock: Block = null; // 現在落下中のブロック
-    private canvas: Canvas; // 描画するcanvas
+    public canvas: Canvas; // 描画するcanvas
     private tetris: Tetris; // テトリスのシステム
     private fallIntervalFrames = 60; // 落下間隔
     private groundFrames = 0; // 地面に触れてからのフレーム数
-    private next: Tetris;  // NEXT表示用のテトリスフィールド
+    //private next: Tetris;  // NEXT表示用のテトリスフィールド
 
     private keyMng: KeyManager ;
 
@@ -341,24 +353,17 @@ class Game {
     // private pressedKeys: Array<boolean>;
 
     public init() {
-        this.canvas = new Canvas("main", 640, 640);
-        this.tetris = new Tetris(10, 20);
-        this.next = new Tetris(5, 30, false);
-        this.blockFactory = new BlockFactory(5);
+        this.canvas = new Canvas("main", Game.CANVAS_WIDTH, Game.CANVAS_HEIGHT);
+        this.tetris = new Tetris(Game.FIELD_SIZE_WIDTH, Game.FIELD_SIZE_HEIGHT);
+        this.blockFactory = new BlockFactory(Game.BLOCK_SIZE);
         this.blockFactory.genList();
 
         this.keyMng = new KeyManager();
-
-        for(let i = 0; i < this.blockFactory.nextList.length; ++i) {
-            this.next.putBlock(0, i * 5 + 1, this.blockFactory.nextList[i], true);
-        }
     }
     
-
     public update() {
         if(this.groundFrames >= 1) {
             this.groundFrames ++;
-            console.log(this.groundFrames);
         }
         // nフレームに一回ブロックを1マス落下させる
         if(this.frame % this.fallIntervalFrames == 0 || this.groundFrames > this.fallIntervalFrames ) { 
@@ -368,6 +373,7 @@ class Game {
                     //落下後にもしそのマスにおけなかったら、その座標にブロックを設置する
                     this.tetris.putBlock(this.blockX, this.blockY, this.fallBlock, true);
                     this.fallBlock = null;
+                    this.frame = 1;
                     this.blockX = 2;
                     this.blockY = -1;
                 }
@@ -379,15 +385,11 @@ class Game {
         }
         // 落下中ブロックがなかったらNEXTから取り出し
         if(this.fallBlock == null) {
-            this.fallBlock = this.blockFactory.next();     
+            this.fallBlock = this.blockFactory.next();
+            //ゲームオーバー処理     
             if(!this.tetris.putBlock(this.blockX, this.blockY, this.fallBlock)) {
                 this.init();
             }        
-            this.next.init();
-            // NEXTの更新
-            for(let i = 0; i < this.blockFactory.nextList.length; ++i) {
-                this.next.putBlock(0, i * 5 + 1, this.blockFactory.nextList[i], true);
-            }
         }
         this.keyMng.updateKeys();
 
@@ -436,9 +438,13 @@ class Game {
         // eraseLineといいつつチェックも行っている
         this.tetris.eraseLine();
         setTimeout( () => { // 描画は負荷が高いので別スレッドで行う
-            this.tetris.draw(this.canvas, 10, 10, 30);
-            DrawNext.draw(this.canvas, this.blockFactory.nextList, 500, 10, 15);
-            this.next.draw(this.canvas, 310, 10, 15);
+            let cvs = this.canvas;
+            cvs.ctx.clearRect(0, 0, cvs.width, cvs.height);
+            this.tetris.draw(cvs, Game.OFFSET_X, Game.OFFSET_Y, 30);
+            DrawBlocks.draw(cvs, this.blockFactory.nextList, Game.OFFSET_X + 300, 0, 15);
+            cvs.ctx.font = "40px";
+            cvs.ctx.fillStyle = "#000000"
+            cvs.ctx.fillText(this.frame + "f", 500,10);
         }, 0);
         ++this.frame;
     }

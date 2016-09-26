@@ -147,6 +147,46 @@ class DrawNext {
     }
 }
 
+class KeyManager {
+    public keys = new Array<number>(91);
+    private pressedKeys = new Array<boolean>(91);
+    
+    constructor() {
+        //キー入力情報の初期化
+        for(let i = 0; i < this.keys.length; ++i) { 
+            this.keys[i] = 0;
+            this.pressedKeys[i] = false;
+        }
+        //キー入力を監視する
+        //キー入力処理そのものはここでやらず、updateの中で行う
+        document.onkeydown = (e) => {
+            //キーリピート対策
+            if(!this.pressedKeys[e.which]) {
+                this.pressedKeys[e.which] = true;
+            }
+            e.preventDefault();
+        }
+        document.onkeyup = (e) => {
+            this.pressedKeys[e.which] = false;
+            this.keys[e.which] = 0;
+        }
+    }
+
+    // キー入力状態を更新する 押されているキーは配列の値がtrueになっている
+    // ため、そのキーがtrueならそのキーの押されているフレーム数を加算する
+    public updateKeys() {
+        this.pressedKeys.forEach((v, i, a)=> {
+            if(v){
+                this.keys[i] += 1;
+            }
+        });
+    }
+
+    public isKeyPushed(keycode: number) {
+        return this.keys[keycode];
+    }
+}
+
 //Canvasのヘルパクラス
 class Canvas {
     public ctx: CanvasRenderingContext2D;
@@ -289,14 +329,16 @@ class Game {
     private fallBlock: Block = null; // 現在落下中のブロック
     private canvas: Canvas; // 描画するcanvas
     private tetris: Tetris; // テトリスのシステム
-    private fallIntervalFrames = 20; // 地面に固定されるまでのフレーム数
+    private fallIntervalFrames = 60; // 落下間隔
     private groundFrames = 0; // 地面に触れてからのフレーム数
     private next: Tetris;  // NEXT表示用のテトリスフィールド
 
+    private keyMng: KeyManager ;
+
     private blockFactory: BlockFactory;
 
-    private keys: Array<number>;
-    private pressedKeys: Array<boolean>;
+    // private keys: Array<number>;
+    // private pressedKeys: Array<boolean>;
 
     public init() {
         this.canvas = new Canvas("main", 640, 640);
@@ -304,44 +346,14 @@ class Game {
         this.next = new Tetris(5, 30, false);
         this.blockFactory = new BlockFactory(5);
         this.blockFactory.genList();
-        this.keys = new Array(91);
-        this.pressedKeys = new Array(91);
-        //キー入力情報の初期化
-        for(let i = 0; i < this.keys.length; ++i) { 
-            this.keys[i] = 0;
-            this.pressedKeys[i] = false;
-        }
+
+        this.keyMng = new KeyManager();
 
         for(let i = 0; i < this.blockFactory.nextList.length; ++i) {
             this.next.putBlock(0, i * 5 + 1, this.blockFactory.nextList[i], true);
         }
-        //キー入力を監視する
-        //キー入力処理そのものはここでやらず、updateの中で行う
-        document.onkeydown = (e) => {
-            //キーリピート対策
-            if(!this.pressedKeys[e.which]) {
-                this.pressedKeys[e.which] = true;
-            }
-            e.preventDefault();
-        }
-        document.onkeyup = (e) => {
-            this.pressedKeys[e.which] = false;
-            this.keys[e.which] = 0;
-        }
     }
-    // キー入力状態を更新する 押されているキーは配列の値がtrueになっている
-    // ため、そのキーがtrueならそのキーの押されているフレーム数を加算する
-    private updateKeys() {
-        this.pressedKeys.forEach((v, i, a)=> {
-            if(v){
-                this.keys[i] += 1;
-            }
-        });
-    }
-
-    private isKeyPushed(keycode: number) {
-        return this.keys[keycode];
-    }
+    
 
     public update() {
         if(this.groundFrames >= 1) {
@@ -377,16 +389,18 @@ class Game {
                 this.next.putBlock(0, i * 5 + 1, this.blockFactory.nextList[i], true);
             }
         }
-        this.updateKeys();
+        this.keyMng.updateKeys();
+
+        let keys = this.keyMng.keys;
 
         //Z
-        if(this.keys[90] == 1) {
+        if(keys[90] == 1) {
             this.fallBlock.rightRotate();
             if(!this.tetris.putBlock(this.blockX, this.blockY, this.fallBlock)) {
                 this.fallBlock.leftRotate();
             }
         //X
-        } else if(this.keys[88] == 1){
+        } else if(keys[88] == 1){
             this.fallBlock.leftRotate();
             if(!this.tetris.putBlock(this.blockX, this.blockY, this.fallBlock)) {
                 this.fallBlock.rightRotate();
@@ -394,25 +408,25 @@ class Game {
         }
 
         //RIGHT
-        if(this.keys[39] == 1 || this.keys[39] >= 15) {
+        if(keys[39] == 1 || keys[39] >= 15) {
             let x = this.blockX + 1;
             if(this.tetris.putBlock(x, this.blockY, this.fallBlock)) {
                 this.blockX = x;
             }
         //LEFT
-        } else if(this.keys[37] == 1 || this.keys[37] >= 15) {
+        } else if(keys[37] == 1 || keys[37] >= 15) {
             let x = this.blockX - 1;
             if(this.tetris.putBlock(x, this.blockY, this.fallBlock)) {
                 this.blockX = x;
             }
         }
         //DOWN 
-        if(this.keys[40] == 1 || this.keys[40] >= 15) {
+        if(keys[40] == 1 || keys[40] >= 15) {
             let y = this.blockY + 1;
             if(this.tetris.putBlock(this.blockX, y, this.fallBlock)) {
                 this.blockY = y;
             }
-            else if(this.keys[40] == 1) {
+            else if(keys[40] == 1) {
                 this.groundFrames = this.fallIntervalFrames;
                 console.log("put");
             }

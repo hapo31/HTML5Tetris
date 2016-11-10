@@ -1,0 +1,25 @@
+{
+  "name": "html5-tetris",
+  "version": "1.0.0",
+  "description": "HTML5 + Typescriptで作るテトリス",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack --progress --colors --watch --config ./webpack.config.js"
+  },
+  "devDependencies": {
+    "ts-loader": "^0.8.2",
+    "typescript": "^1.8.10",
+    "typings": "^1.3.2",
+    "webpack": "^1.13.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/happou31/HTML5Tetris.git"
+  },
+  "author": "happo31",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/happou31/HTML5Tetris/issues"
+  },
+  "homepage": "https://github.com/happou31/HTML5Tetris#readme"
+}
